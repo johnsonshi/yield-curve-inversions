@@ -1,0 +1,45 @@
+name: Daily Job
+
+on:
+  push:
+    branches: [ "main" ]
+  schedule:
+    - cron: "0 0 * * 0"
+
+jobs:
+  generate-charts:
+    name: Generate Charts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Ubuntu Packages 
+        run: ./scripts/install-ubuntu-packages.sh
+
+      - name: Install R packages
+        run: sudo ./scripts/install-r-packages.R
+
+      - name: Generate 1-Year Chart
+        run: ./scripts/1.sh
+
+      - name: Generate 5-Year Chart
+        run: ./scripts/5.sh
+
+      - name: Generate Entire History Chart
+        run: ./scripts/all.sh
+
+      - name: Git Add Changes
+        run: git add -A
+
+      - name: Git Commit Changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git commit -m "Generate Charts"
+
+      - name: Git Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+          force_with_lease: true
